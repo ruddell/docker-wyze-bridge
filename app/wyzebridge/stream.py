@@ -5,12 +5,13 @@ from subprocess import Popen, TimeoutExpired
 from threading import Thread
 from typing import Any, Callable, Optional, Protocol
 
-from wyzebridge.config import MOTION, MQTT_DISCOVERY, SNAPSHOT_INT, SNAPSHOT_TYPE
+from wyzebridge.config import MOTION, MQTT_DISCOVERY, SNAPSHOT_TYPE
 from wyzebridge.ffmpeg import rtsp_snap_cmd
 from wyzebridge.logging import logger
 from wyzebridge.mqtt import bridge_status, cam_control, publish_topic, update_preview
 from wyzebridge.mtx_event import RtspEvent
 from wyzebridge.wyze_events import WyzeEvents
+from wyzebridge.bridge_utils_sunset import should_take_snapshot, should_skip_snapshot
 
 
 class Stream(Protocol):
@@ -142,11 +143,21 @@ class StreamManager:
         if force or self._should_snap():
             self.last_snap = time.time()
             for cam in cams or self.active_streams():
+                if should_skip_snapshot(cam):
+                    continue
                 stop_subprocess(self.rtsp_snapshots.get(cam))
                 self.rtsp_snap_popen(cam, True)
 
     def _should_snap(self):
-        return SNAPSHOT_TYPE == "rtsp" and time.time() - self.last_snap >= SNAPSHOT_INT
+        """
+        Determines whether a snapshot should be taken based on the interval, which can change on sunrise/sunset
+        
+        Returns:
+        - bool: True if a snapshot should be taken, False otherwise.
+        """
+        if not should_take_snapshot(SNAPSHOT_TYPE, self.last_snap):
+            return False
+        return True
 
     def get_sse_status(self) -> dict:
         return {
