@@ -5,7 +5,7 @@ from subprocess import Popen, TimeoutExpired
 from threading import Thread
 from typing import Any, Callable, Optional, Protocol
 
-from wyzebridge.config import MOTION, MQTT_DISCOVERY, SNAPSHOT_INT, SNAPSHOT_TYPE
+from wyzebridge.config import MOTION, MQTT_DISCOVERY, SNAPSHOT_CAMERAS, SNAPSHOT_INT, SNAPSHOT_TYPE
 from wyzebridge.ffmpeg import rtsp_snap_cmd
 from wyzebridge.logging import logger
 from wyzebridge.mqtt import bridge_status, cam_control, publish_topic, update_preview
@@ -142,6 +142,8 @@ class StreamManager:
         if force or self._should_snap():
             self.last_snap = time.time()
             for cam in cams or self.active_streams():
+                if cam not in SNAPSHOT_CAMERAS:
+                    continue
                 stop_subprocess(self.rtsp_snapshots.get(cam))
                 self.rtsp_snap_popen(cam, True)
 

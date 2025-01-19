@@ -28,6 +28,7 @@ CONNECT_TIMEOUT: int = env_bool("CONNECT_TIMEOUT", 20, style="int")
 TOKEN_PATH: str = "/config/" if HASS_TOKEN else "/tokens/"
 IMG_PATH: str = f'/{env_bool("IMG_DIR", "img").strip("/")}/'
 
+SNAPSHOT_CAMERAS: list[str] = [cam.strip() for cam in getenv("SNAPSHOT_CAMERAS", "").split(",") if cam.strip()]
 SNAPSHOT_TYPE, SNAPSHOT_INT = split_int_str(env_bool("SNAPSHOT"), min=15, default=180)
 SNAPSHOT_FORMAT: str = env_bool("SNAPSHOT_FORMAT", style="original").strip("/")
 
